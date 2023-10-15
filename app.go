@@ -38,7 +38,7 @@ func (a app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	var cmd tea.Cmd
 	a.ml, cmd = a.ml.Update(msg)
-	a.viewport.SetContent(wordwrap.String(a.emails[a.ml.index].body, 40))
+	a.viewport.SetContent(wordwrap.String(a.emails[a.ml.index].body, a.viewport.Width-4))
 	return a, cmd
 }
 
