@@ -1,3 +1,4 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/monban/gutt)](https://goreportcard.com/report/github.com/monban/gutt)
 # Gutt
 `gutt` is a text user interface mail user agent (TUI MUA) in the style of [Mutt](http://www.mutt.org/).
 It is currently in (very) early development.
