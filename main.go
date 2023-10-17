@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/log"
 	mbox "github.com/emersion/go-mbox"
 )
 
@@ -17,7 +18,7 @@ func main() {
 
 	p := tea.NewProgram(a, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }
 
@@ -25,7 +26,7 @@ func readEmails() []email {
 	var emails []email
 	file, err := os.Open(getMailfile())
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	defer file.Close()
 
@@ -36,17 +37,17 @@ func readEmails() []email {
 		if errors.Is(err, io.EOF) {
 			break
 		} else if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 		e, err := mail.ReadMessage(msg)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 		email.from = e.Header.Get("From")
 		email.subject = e.Header.Get("Subject")
 		body, err := io.ReadAll(e.Body)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 		email.body = string(body)
 		emails = append(emails, email)
@@ -61,7 +62,7 @@ func getMailfile() string {
 		mailfile = filepath.Join("/var/spool/mail", os.Getenv("USER"))
 	}
 	if mailfile == "" {
-		panic("can't find mailfile")
+		log.Fatal("can't find mailfile")
 	}
 	return mailfile
 }
