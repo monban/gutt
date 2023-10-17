@@ -1,9 +1,12 @@
 package main
 
+import "time"
+
 type email struct {
 	from    string
 	subject string
 	body    string
+	time    time.Time
 }
 
 func (e email) FilterValue() string {
@@ -15,5 +18,5 @@ func (e email) Title() string {
 }
 
 func (e email) Description() string {
-	return e.from
+	return e.time.Local().Format(time.DateTime)
 }

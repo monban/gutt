@@ -38,6 +38,9 @@ func (mbp MboxProvider) GetMail() emails {
 		}
 		email.from = e.Header.Get("From")
 		email.subject = e.Header.Get("Subject")
+		if email.time, err = e.Header.Date(); err != nil {
+			email.time = time.Now()
+		}
 		body, err := io.ReadAll(e.Body)
 		if err != nil {
 			log.Fatal(err)
