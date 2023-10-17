@@ -2,9 +2,8 @@ package main
 
 import (
 	"github.com/charmbracelet/bubbles/viewport"
-	"github.com/charmbracelet/lipgloss"
-
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/reflow/wordwrap"
 )
 
@@ -12,6 +11,10 @@ var (
 	mlStyle = lipgloss.NewStyle().Border(lipgloss.DoubleBorder()).Align(lipgloss.Left)
 	vpStyle = mlStyle.Copy().Align(lipgloss.Right)
 )
+
+type Provider interface {
+	GetMail() emails
+}
 
 type geometry struct {
 	width  int
@@ -24,21 +27,42 @@ type app struct {
 	emails   []email
 	index    int
 	geo      geometry
+	provider Provider
 }
 
+type emails []email
+
 func (a app) Init() tea.Cmd {
-	return nil
+	return func() tea.Msg {
+		return a.provider.GetMail()
+	}
 }
 
 func (a app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if msg, ok := msg.(tea.WindowSizeMsg); ok {
+	var cmd tea.Cmd
+
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
 		a.geo.height = msg.Height - 2
 		a.geo.width = msg.Width
 		a = a.Reformat()
+	case emails:
+		a.emails = msg
+		a.ml = NewMailList(a.emails)
+		a = a.Reformat()
+	default:
+		i := a.ml.index
+		a.ml, cmd = a.ml.Update(msg)
+
+		// TODO: checking if a variable has changed seems
+		// the wrong way to go about this
+		if a.ml.index != i {
+			if len(a.emails) >= a.ml.index {
+				a.viewport.SetContent(wordwrap.String(a.emails[a.ml.index].body, a.viewport.Width-4))
+			}
+		}
 	}
-	var cmd tea.Cmd
-	a.ml, cmd = a.ml.Update(msg)
-	a.viewport.SetContent(wordwrap.String(a.emails[a.ml.index].body, a.viewport.Width-4))
+
 	return a, cmd
 }
 
@@ -57,10 +81,10 @@ func (a app) View() string {
 	return lipgloss.JoinHorizontal(lipgloss.Top, l, vp)
 }
 
-func NewApp(emails []email) app {
+func NewApp(p Provider) app {
 	return app{
-		emails:   emails,
-		ml:       NewMailList(emails),
+		ml:       NewMailList([]email{}),
 		viewport: viewport.New(0, 0),
+		provider: p,
 	}
 }
