@@ -6,11 +6,13 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
+	"github.com/monban/gutt/internal/app"
+	"github.com/monban/gutt/internal/providers/mbox"
 )
 
 func main() {
-	prov := MboxProvider{getMailfile()}
-	var a app = NewApp(prov)
+	prov := mbox.New(getMailfile())
+	a := app.New(prov)
 
 	p := tea.NewProgram(a, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {

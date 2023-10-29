@@ -1,4 +1,4 @@
-package main
+package mbox
 
 import (
 	"errors"
@@ -9,14 +9,19 @@ import (
 
 	"github.com/charmbracelet/log"
 	mbox "github.com/emersion/go-mbox"
+	"github.com/monban/gutt/internal/email"
 )
 
 type MboxProvider struct {
 	file string
 }
 
-func (mbp MboxProvider) GetMail() emails {
-	var emails []email
+func New(filename string) email.Provider {
+	return MboxProvider{filename}
+}
+
+func (mbp MboxProvider) GetMail() email.Emails {
+	var emails email.Emails
 	file, err := os.Open(mbp.file)
 	if err != nil {
 		log.Fatal(err)
@@ -25,7 +30,7 @@ func (mbp MboxProvider) GetMail() emails {
 
 	reader := mbox.NewReader(file)
 	for {
-		var email email
+		var email email.Email
 		msg, err := reader.NextMessage()
 		if errors.Is(err, io.EOF) {
 			break
@@ -36,18 +41,17 @@ func (mbp MboxProvider) GetMail() emails {
 		if err != nil {
 			log.Fatal(err)
 		}
-		email.from = e.Header.Get("From")
-		email.subject = e.Header.Get("Subject")
-		if email.time, err = e.Header.Date(); err != nil {
-			email.time = time.Now()
+		email.From = e.Header.Get("From")
+		email.Subject = e.Header.Get("Subject")
+		if email.Time, err = e.Header.Date(); err != nil {
+			email.Time = time.Now()
 		}
 		body, err := io.ReadAll(e.Body)
 		if err != nil {
 			log.Fatal(err)
 		}
-		email.body = string(body)
+		email.Body = string(body)
 		emails = append(emails, email)
 	}
-	time.Sleep(time.Second) //HACK: this is for ui testing
 	return emails
 }

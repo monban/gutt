@@ -1,13 +1,14 @@
-package main
+package app
 
 import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/monban/gutt/internal/email"
 )
 
 type mailList struct {
 	list   list.Model
-	emails []email
+	emails email.Emails
 	index  int
 }
 
@@ -28,7 +29,7 @@ func (ml mailList) View() string {
 	return ml.list.View()
 }
 
-func NewMailList(emails []email) mailList {
+func NewMailList(emails email.Emails) mailList {
 	var ml mailList
 	ml.emails = emails
 	var items []list.Item = make([]list.Item, len(ml.emails))

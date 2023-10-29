@@ -1,9 +1,10 @@
-package main
+package app
 
 import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/monban/gutt/internal/email"
 	"github.com/muesli/reflow/wordwrap"
 )
 
@@ -12,33 +13,27 @@ var (
 	vpStyle = mlStyle.Copy().Align(lipgloss.Right)
 )
 
-type Provider interface {
-	GetMail() emails
-}
-
 type geometry struct {
 	width  int
 	height int
 }
 
-type app struct {
+type App struct {
 	ml       mailList
 	viewport viewport.Model
-	emails   []email
+	emails   email.Emails
 	index    int
 	geo      geometry
-	provider Provider
+	provider email.Provider
 }
 
-type emails []email
-
-func (a app) Init() tea.Cmd {
+func (a App) Init() tea.Cmd {
 	return func() tea.Msg {
 		return a.provider.GetMail()
 	}
 }
 
-func (a app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
@@ -46,7 +41,7 @@ func (a app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.geo.height = msg.Height - 2
 		a.geo.width = msg.Width
 		a = a.Reformat()
-	case emails:
+	case email.Emails:
 		a.emails = msg
 		a.ml = NewMailList(a.emails)
 		a = a.Reformat()
@@ -58,7 +53,7 @@ func (a app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// the wrong way to go about this
 		if a.ml.index != i {
 			if len(a.emails) >= a.ml.index {
-				a.viewport.SetContent(wordwrap.String(a.emails[a.ml.index].body, a.viewport.Width-4))
+				a.viewport.SetContent(wordwrap.String(a.emails[a.ml.index].Body, a.viewport.Width-4))
 			}
 		}
 	}
@@ -66,7 +61,7 @@ func (a app) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return a, cmd
 }
 
-func (a app) Reformat() app {
+func (a App) Reformat() App {
 	a.ml.list.SetWidth(int(float64(a.geo.width) * 0.4))
 	a.ml.list.SetHeight(a.geo.height)
 	a.viewport.Width = int(float64(a.geo.width) * 0.6)
@@ -74,16 +69,16 @@ func (a app) Reformat() app {
 	return a
 }
 
-func (a app) View() string {
+func (a App) View() string {
 	vp := vpStyle.Render(a.viewport.View())
 	l := vpStyle.Render(a.ml.View())
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, l, vp)
 }
 
-func NewApp(p Provider) app {
-	return app{
-		ml:       NewMailList([]email{}),
+func New(p email.Provider) App {
+	return App{
+		ml:       NewMailList(email.Emails{}),
 		viewport: viewport.New(0, 0),
 		provider: p,
 	}
