@@ -8,11 +8,6 @@ import (
 	"github.com/muesli/reflow/wordwrap"
 )
 
-var (
-	mlStyle = lipgloss.NewStyle().Border(lipgloss.DoubleBorder()).Align(lipgloss.Left)
-	vpStyle = mlStyle.Copy().Align(lipgloss.Right)
-)
-
 type geometry struct {
 	width  int
 	height int
@@ -25,6 +20,7 @@ type App struct {
 	index    int
 	geo      geometry
 	provider email.Provider
+	style    lipgloss.Style
 }
 
 func (a App) Init() tea.Cmd {
@@ -53,7 +49,7 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// the wrong way to go about this
 		if a.ml.index != i {
 			if len(a.emails) >= a.ml.index {
-				a.viewport.SetContent(wordwrap.String(a.emails[a.ml.index].Body, a.viewport.Width-4))
+				a.viewport.SetContent(wordwrap.String(a.emails[a.ml.index].Body, a.viewport.Width))
 			}
 		}
 	}
@@ -62,24 +58,30 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (a App) Reformat() App {
-	a.ml.list.SetWidth(int(float64(a.geo.width) * 0.4))
+	usableWidth := float64(a.geo.width - 2)
+	a.ml.list.SetWidth(int(usableWidth * 0.4))
 	a.ml.list.SetHeight(a.geo.height)
-	a.viewport.Width = int(float64(a.geo.width) * 0.6)
+	a.viewport.Width = int(usableWidth * 0.6)
 	a.viewport.Height = a.geo.height
+	a.style.Width(int(usableWidth))
 	return a
 }
 
 func (a App) View() string {
-	vp := vpStyle.Render(a.viewport.View())
-	l := vpStyle.Render(a.ml.View())
+	vp := a.viewport.View()
+	l := a.ml.View()
 
-	return lipgloss.JoinHorizontal(lipgloss.Top, l, vp)
+	return a.style.Render(lipgloss.JoinHorizontal(lipgloss.Top, l, vp))
 }
 
 func New(p email.Provider) App {
+
 	return App{
 		ml:       NewMailList(email.Emails{}),
 		viewport: viewport.New(0, 0),
 		provider: p,
+		style: lipgloss.NewStyle().
+			Border(lipgloss.DoubleBorder()).
+			Align(lipgloss.Left),
 	}
 }
