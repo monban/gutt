@@ -8,17 +8,11 @@ import (
 	"github.com/muesli/reflow/wordwrap"
 )
 
-type geometry struct {
-	width  int
-	height int
-}
-
 type App struct {
 	ml       mailList
 	viewport viewport.Model
 	emails   email.Emails
 	index    int
-	geo      geometry
 	provider email.Provider
 	style    lipgloss.Style
 }
@@ -34,8 +28,9 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		a.geo.height = msg.Height - 2
-		a.geo.width = msg.Width
+		// TODO: why do we have to subtract 2 here?
+		a.style = a.style.Height(msg.Height - 2)
+		a.style = a.style.Width(msg.Width - 2)
 		a = a.Reformat()
 	case email.Emails:
 		a.emails = msg
@@ -49,6 +44,7 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// the wrong way to go about this
 		if a.ml.index != i {
 			if len(a.emails) >= a.ml.index {
+				a = a.Reformat()
 				a.viewport.SetContent(wordwrap.String(a.emails[a.ml.index].Body, a.viewport.Width))
 			}
 		}
@@ -58,12 +54,11 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (a App) Reformat() App {
-	usableWidth := float64(a.geo.width - 2)
+	usableWidth := float64(a.style.GetWidth())
 	a.ml.list.SetWidth(int(usableWidth * 0.4))
-	a.ml.list.SetHeight(a.geo.height)
+	a.ml.list.SetHeight(a.style.GetHeight())
 	a.viewport.Width = int(usableWidth * 0.6)
-	a.viewport.Height = a.geo.height
-	a.style.Width(int(usableWidth))
+	a.viewport.Height = a.style.GetHeight()
 	return a
 }
 
@@ -75,7 +70,6 @@ func (a App) View() string {
 }
 
 func New(p email.Provider) App {
-
 	return App{
 		ml:       NewMailList(email.Emails{}),
 		viewport: viewport.New(0, 0),
